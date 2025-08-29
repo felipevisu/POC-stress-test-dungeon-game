@@ -44,6 +44,13 @@ export DB_PASSWORD=your_password
 mvn spring-boot:run
 ```
 
+### Option 2 - build for localhost
+
+```bash
+mvn clean package
+java -jar target/dungeon-game-1.0-SNAPSHOT.jar
+```
+
 ### Option 2 - docker compose
 
 ```bash
@@ -213,9 +220,11 @@ docker-compose up --build k6
 
 ```bash
 docker-compose down -v --remove-orphans
-ocker system prune -af --volumes
+docker system prune -af --volumes
 ```
 
 ## Results
 
 <img src="./screenshots/stress-tests-terminal-results.png" />
+
+<img src="./screenshots/grafana-dashboard.png" />
