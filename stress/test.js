@@ -2,9 +2,32 @@ import http from "k6/http";
 import { sleep, check } from "k6";
 
 export let options = {
-  vus: 200, // number of concurrent users
-  duration: "60s", // test duration
+  thresholds: {
+    http_req_failed: ["rate<0.01"], // http errors should be less than 1%
+    http_req_duration: ["p(95)<200"], // 95% of requests should be below 200ms
+  },
+  stages: [
+    { duration: "60s", target: 10 },
+    { duration: "60s", target: 20 },
+    { duration: "60s", target: 30 },
+    { duration: "60s", target: 40 },
+    { duration: "60s", target: 50 },
+  ],
 };
+
+function randomBoard(minSize = 2, maxSize = 10, minVal = -10, maxVal = 10) {
+  const rows = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize;
+  const cols = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize;
+
+  const board = Array.from({ length: rows }, () =>
+    Array.from(
+      { length: cols },
+      () => Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal
+    )
+  );
+
+  return board;
+}
 
 export default function () {
   sleep(10);
@@ -26,16 +49,13 @@ export default function () {
   let playerId = playerRes.json("id");
 
   // Create a board
+  const boardData = {
+    name: `Board_${__VU}_${Date.now()}`,
+    board: randomBoard(),
+  };
   let boardRes = http.post(
     "http://app:8080/api/boards",
-    JSON.stringify({
-      name: `Board_${__VU}_${Date.now()}`,
-      board: [
-        [-2, -3, 3],
-        [-5, -10, 1],
-        [10, 30, -5],
-      ],
-    }),
+    JSON.stringify(boardData),
     { headers: { "Content-Type": "application/json" } }
   );
 
