@@ -62,6 +62,22 @@ kubectl -n k6-operator-system rollout status deploy/k6-operator-controller-manag
 
 # =========================
 # 3) Namespace for tests
+
+# =========================
+# 3.1) Wire external 'app' (docker-compose) into this namespace
+#      We create a Service+Endpoints named 'app' -> ${APP_HOST_IP}:${APP_PORT}
+# =========================
+APP_HOST_IP="${APP_HOST_IP:-172.17.0.1}"
+APP_PORT="${APP_PORT:-8080}"
+EXTERNAL_APP_TMPL="${MANIFESTS_DIR}/external-app.tmpl.yaml"
+
+if [[ -f "$EXTERNAL_APP_TMPL" ]]; then
+  echo ">> Creating Service+Endpoints 'app' -> ${APP_HOST_IP}:${APP_PORT} in ns ${NAMESPACE}"
+  NAMESPACE="$NAMESPACE" APP_HOST_IP="$APP_HOST_IP" APP_PORT="$APP_PORT" \ 
+  envsubst < "$EXTERNAL_APP_TMPL" | kubectl apply -f -
+else
+  echo "WARN: external-app.tmpl.yaml not found at '$EXTERNAL_APP_TMPL' — skipping external service wiring"
+fi
 # =========================
 if ! kubectl get ns "$NAMESPACE" >/dev/null 2>&1; then
   echo ">> Creating namespace: $NAMESPACE"
