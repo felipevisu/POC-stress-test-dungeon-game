@@ -2,19 +2,13 @@
 set -euo pipefail
 
 # =========================
-# Default configuration (can be overridden via env vars)
+# Default configuration (override via env if needed)
 # =========================
 CLUSTER_NAME="${CLUSTER_NAME:-k6-distributed-test}"
 NAMESPACE="${NAMESPACE:-k6-tests}"
 PARALLELISM="${PARALLELISM:-3}"
 CONFIGMAP_NAME="${CONFIGMAP_NAME:-k6-script}"
 TESTRUN_NAME="${TESTRUN_NAME:-k6-demo}"
-
-# TARGET_URL: target endpoint of your application (HTTP)
-TARGET_URL="${TARGET_URL:-http://localhost:8080/actuator/health}"
-
-# (Optional) k6 output for InfluxDB v1. Example: http://host.docker.internal:8086/k6
-INFLUX_URL="${INFLUX_URL:-http://localhost:8086}"
 
 # Resources per k6 runner pod
 REQ_CPU="${REQ_CPU:-500m}"
@@ -39,7 +33,7 @@ need envsubst
 
 if [[ ! -f "${ROOT_DIR}/stress/test.js" ]]; then
   echo "ERROR: k6 script not found at '${ROOT_DIR}/stress/test.js'."
-  echo "       Adjust your project structure or export SCRIPT_PATH and create the ConfigMap manually."
+  echo "       Make sure your test is at that path."
   exit 1
 fi
 
@@ -85,32 +79,14 @@ kubectl -n "$NAMESPACE" create configmap "$CONFIGMAP_NAME"       --from-file "te
 # =========================
 # 5) Render and apply TestRun (3 instances by default)
 # =========================
-TMP_RENDER="$(mktemp)"
-cp "$TEMPLATE" "$TMP_RENDER"
-
-if [[ -n "$INFLUX_URL" ]]; then
-  INFLUX_BLOCK=$'  arguments: >\n    --out influxdb='"${INFLUX_URL}"
-  sed -i "s|#__INFLUX_ARGS__|${INFLUX_BLOCK//|/\|}|" "$TMP_RENDER"
-else
-  sed -i "s|#__INFLUX_ARGS__||" "$TMP_RENDER"
-fi
-
 echo ">> Applying TestRun '${TESTRUN_NAME}' with parallelism=${PARALLELISM}"
-NAMESPACE="$NAMESPACE" TESTRUN_NAME="$TESTRUN_NAME" PARALLELISM="$PARALLELISM" \ 
-CONFIGMAP_NAME="$CONFIGMAP_NAME" TARGET_URL="$TARGET_URL" \ 
-REQ_CPU="$REQ_CPU" REQ_MEM="$REQ_MEM" LIM_CPU="$LIM_CPU" LIM_MEM="$LIM_MEM" \ 
-envsubst < "$TMP_RENDER" | kubectl apply -f -
+NAMESPACE="$NAMESPACE" TESTRUN_NAME="$TESTRUN_NAME" PARALLELISM="$PARALLELISM"     CONFIGMAP_NAME="$CONFIGMAP_NAME" REQ_CPU="$REQ_CPU" REQ_MEM="$REQ_MEM" LIM_CPU="$LIM_CPU" LIM_MEM="$LIM_MEM"     envsubst < "$TEMPLATE" | kubectl apply -f -
 
 echo
 echo "=============================================="
 echo "✅ TestRun created: ${TESTRUN_NAME} (ns: ${NAMESPACE})"
 echo "   Parallelism : ${PARALLELISM}"
-echo "   TARGET_URL  : ${TARGET_URL}"
-if [[ -n "$INFLUX_URL" ]]; then
-  echo "   Output      : ${INFLUX_URL}"
-else
-  echo "   Output      : (none - logs only)"
-fi
+echo "   Output      : (none - check k6 runner pod logs)"
 echo "----------------------------------------------"
 echo "Watch pods:"
 echo "  kubectl -n ${NAMESPACE} get pods -w"
