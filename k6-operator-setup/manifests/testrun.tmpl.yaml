@@ -1,0 +1,22 @@
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: ${TESTRUN_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  parallelism: ${PARALLELISM}
+  script:
+    configMap:
+      name: ${CONFIGMAP_NAME}
+      file: test.js
+  runner:
+    env:
+      - name: K6_OUT
+        value: influxdb=http://172.19.0.1:8086/k6?consistency=one
+    resources:
+      requests:
+        cpu: "${REQ_CPU}"
+        memory: "${REQ_MEM}"
+      limits:
+        cpu: "${LIM_CPU}"
+        memory: "${LIM_MEM}"

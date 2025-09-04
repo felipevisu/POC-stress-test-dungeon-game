@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  namespace: ${NAMESPACE}
+spec:
+  ports:
+    - name: http
+      port: ${APP_PORT}
+      targetPort: ${APP_PORT}
+  type: ClusterIP
+  selector: {} # no selector; endpoints define the backends
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: app
+  namespace: ${NAMESPACE}
+subsets:
+  - addresses:
+      - ip: ${APP_HOST_IP}
+    ports:
+      - name: http
+        port: ${APP_PORT}
