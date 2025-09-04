@@ -229,5 +229,3 @@ docker system prune -af --volumes
 
 <img src="./screenshots/grafana-dashboard.png" />
 
-
-## Run the stress with K6 Operator
