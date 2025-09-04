@@ -1,39 +1,38 @@
-# k6-operator local (Kind) — Setup rápido
+# k6-operator local (Kind) — Quick Setup
 
-Este pacote cria um cluster Kind (se não existir), instala o k6-operator,
-publica seu script `stress/test.js` via ConfigMap e aplica um TestRun
-com 3 instâncias (pods) de k6 em paralelo.
+This package creates a Kind cluster (if it does not exist), installs the k6-operator,
+publishes your script `stress/test.js` as a ConfigMap, and applies a TestRun
+with 3 instances (pods) of k6 running in parallel.
 
-## Estrutura
+## Structure
 ```
 k6-operator-setup/
-├─ scripts/
-│  └─ setup-k6.sh
+├─ setup-k6.sh
 └─ manifests/
    └─ testrun.tmpl.yaml
 ```
 
-> Seu script de teste deve estar em: `./stress/test.js` (raiz do projeto).
+> Your test script should be located at: `./stress/test.js` (project root).
 
-## Pré-requisitos
+## Requirements
 - kubectl
 - kind
 - curl
-- envsubst (pacote gettext)
+- envsubst (from gettext package)
 
-## Uso
+## Usage
 ```bash
-cd k6-operator-setup/scripts
+cd k6-operator-setup/
 chmod +x setup-k6.sh
 ./setup-k6.sh
 ```
 
-Variáveis opcionais:
+Optional environment variables:
 ```bash
 TARGET_URL="http://host.docker.internal:8080/health"     INFLUX_URL="http://host.docker.internal:8086/k6"     PARALLELISM=3     NAMESPACE="k6-tests"     ./setup-k6.sh
 ```
 
-Ver status/logs:
+Monitor status/logs:
 ```bash
 kubectl -n k6-tests get pods -w
 kubectl -n k6-tests get jobs

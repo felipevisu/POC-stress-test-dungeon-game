@@ -9,11 +9,7 @@ spec:
     configMap:
       name: ${CONFIGMAP_NAME}
       file: test.js
-#__INFLUX_ARGS__
   runner:
-    env:
-      - name: TARGET_URL
-        value: "${TARGET_URL}"
     resources:
       requests:
         cpu: "${REQ_CPU}"
