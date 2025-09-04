@@ -71,6 +71,22 @@ APP_HOST_IP="${APP_HOST_IP:-172.17.0.1}"
 APP_PORT="${APP_PORT:-8080}"
 EXTERNAL_APP_TMPL="${MANIFESTS_DIR}/external-app.tmpl.yaml"
 
+# =========================
+# 3.2) Wire external 'influxdb' (docker-compose) into this namespace
+#      Service+Endpoints named 'influxdb' -> ${INFLUX_HOST_IP}:${INFLUX_PORT}
+# =========================
+INFLUX_HOST_IP="${INFLUX_HOST_IP:-172.17.0.1}"
+INFLUX_PORT="${INFLUX_PORT:-8086}"
+EXTERNAL_INFLUX_TMPL="${MANIFESTS_DIR}/external-influx.tmpl.yaml"
+
+if [[ -f "$EXTERNAL_INFLUX_TMPL" ]]; then
+  echo ">> Creating Service+Endpoints 'influxdb' -> ${INFLUX_HOST_IP}:${INFLUX_PORT} in ns ${NAMESPACE}"
+  NAMESPACE="$NAMESPACE" INFLUX_HOST_IP="$INFLUX_HOST_IP" INFLUX_PORT="$INFLUX_PORT" \ 
+  envsubst < "$EXTERNAL_INFLUX_TMPL" | kubectl apply -f -
+else
+  echo "WARN: external-influx.tmpl.yaml not found at '$EXTERNAL_INFLUX_TMPL' — skipping external influx wiring"
+fi
+
 if [[ -f "$EXTERNAL_APP_TMPL" ]]; then
   echo ">> Creating Service+Endpoints 'app' -> ${APP_HOST_IP}:${APP_PORT} in ns ${NAMESPACE}"
   NAMESPACE="$NAMESPACE" APP_HOST_IP="$APP_HOST_IP" APP_PORT="$APP_PORT" \ 
