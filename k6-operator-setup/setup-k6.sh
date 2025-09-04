@@ -64,10 +64,17 @@ kubectl -n k6-operator-system rollout status deploy/k6-operator-controller-manag
 # 3) Namespace for tests
 
 # =========================
+if ! kubectl get ns "$NAMESPACE" >/dev/null 2>&1; then
+  echo ">> Creating namespace: $NAMESPACE"
+  kubectl create ns "$NAMESPACE"
+else
+  echo ">> Namespace '$NAMESPACE' already exists"
+fi
+# =========================
 # 3.1) Wire external 'app' (docker-compose) into this namespace
 #      We create a Service+Endpoints named 'app' -> ${APP_HOST_IP}:${APP_PORT}
 # =========================
-APP_HOST_IP="${APP_HOST_IP:-172.17.0.1}"
+APP_HOST_IP="${APP_HOST_IP:-172.19.0.1}"
 APP_PORT="${APP_PORT:-8080}"
 EXTERNAL_APP_TMPL="${MANIFESTS_DIR}/external-app.tmpl.yaml"
 
@@ -75,33 +82,39 @@ EXTERNAL_APP_TMPL="${MANIFESTS_DIR}/external-app.tmpl.yaml"
 # 3.2) Wire external 'influxdb' (docker-compose) into this namespace
 #      Service+Endpoints named 'influxdb' -> ${INFLUX_HOST_IP}:${INFLUX_PORT}
 # =========================
-INFLUX_HOST_IP="${INFLUX_HOST_IP:-172.17.0.1}"
+INFLUX_HOST_IP="${INFLUX_HOST_IP:-172.19.0.1}"
 INFLUX_PORT="${INFLUX_PORT:-8086}"
 EXTERNAL_INFLUX_TMPL="${MANIFESTS_DIR}/external-influx.tmpl.yaml"
 
 if [[ -f "$EXTERNAL_INFLUX_TMPL" ]]; then
   echo ">> Creating Service+Endpoints 'influxdb' -> ${INFLUX_HOST_IP}:${INFLUX_PORT} in ns ${NAMESPACE}"
-  NAMESPACE="$NAMESPACE" INFLUX_HOST_IP="$INFLUX_HOST_IP" INFLUX_PORT="$INFLUX_PORT" \ 
-  envsubst < "$EXTERNAL_INFLUX_TMPL" | kubectl apply -f -
+  env NAMESPACE="$NAMESPACE" TESTRUN_NAME="$TESTRUN_NAME" PARALLELISM="$PARALLELISM" CONFIGMAP_NAME="$CONFIGMAP_NAME" REQ_CPU="$REQ_CPU" REQ_MEM="$REQ_MEM" LIM_CPU="$LIM_CPU" LIM_MEM="$LIM_MEM" INFLUX_PORT="$INFLUX_PORT" envsubst < "$TEMPLATE" | kubectl apply -f -
 else
   echo "WARN: external-influx.tmpl.yaml not found at '$EXTERNAL_INFLUX_TMPL' — skipping external influx wiring"
 fi
 
 if [[ -f "$EXTERNAL_APP_TMPL" ]]; then
   echo ">> Creating Service+Endpoints 'app' -> ${APP_HOST_IP}:${APP_PORT} in ns ${NAMESPACE}"
-  NAMESPACE="$NAMESPACE" APP_HOST_IP="$APP_HOST_IP" APP_PORT="$APP_PORT" \ 
-  envsubst < "$EXTERNAL_APP_TMPL" | kubectl apply -f -
+  env NAMESPACE="$NAMESPACE" APP_HOST_IP="$APP_HOST_IP" APP_PORT="$APP_PORT" envsubst < "$EXTERNAL_APP_TMPL" | kubectl apply -f -
 else
   echo "WARN: external-app.tmpl.yaml not found at '$EXTERNAL_APP_TMPL' — skipping external service wiring"
 fi
-# =========================
-if ! kubectl get ns "$NAMESPACE" >/dev/null 2>&1; then
-  echo ">> Creating namespace: $NAMESPACE"
-  kubectl create ns "$NAMESPACE"
-else
-  echo ">> Namespace '$NAMESPACE' already exists"
-fi
 
+# echo ">> Preflight: DNS+HTTP check to influxdb"
+# kubectl -n "$NAMESPACE" run -it --rm k6-preflight-influx --image=curlimages/curl --restart=Never -- \
+#   sh -lc 'set -e; getent hosts influxdb; curl -sSI http://influxdb:8086/ping | head -n1' || {
+#     echo "ERROR: influxdb not reachable from namespace '$NAMESPACE'.";
+#     echo "       Check INFLUX_HOST_IP (current: $INFLUX_HOST_IP) and that your docker-compose InfluxDB is UP.";
+#     exit 1;
+# }
+
+# echo ">> Preflight: DNS+HTTP check to app"
+# kubectl -n "$NAMESPACE" run -it --rm k6-preflight-app --image=curlimages/curl --restart=Never -- \
+#   sh -lc 'set -e; getent hosts app; curl -sSI http://app:8080 | head -n1' || {
+#     echo "ERROR: app not reachable from namespace '$NAMESPACE'.";
+#     echo "       Check APP_HOST_IP (current: $APP_HOST_IP) and that your app is UP.";
+#     exit 1;
+# }
 # =========================
 # 4) ConfigMap with k6 script
 # =========================

@@ -36,5 +36,5 @@ Monitor status/logs:
 ```bash
 kubectl -n k6-tests get pods -w
 kubectl -n k6-tests get jobs
-kubectl -n k6-tests logs job/k6-demo-0
+kubectl -n k6-tests logs job/k6-demo-1
 ```
