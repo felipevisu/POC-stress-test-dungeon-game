@@ -7,15 +7,17 @@ export let options = {
     http_req_duration: ["p(95)<200"], // 95% of requests should be below 200ms
   },
   stages: [
-    { duration: "60s", target: 10 },
-    { duration: "60s", target: 20 },
-    { duration: "60s", target: 30 },
-    { duration: "60s", target: 40 },
-    { duration: "60s", target: 50 },
+    { duration: "10s", target: 50 }, // quickly ramp to 50 users
+    { duration: "30s", target: 50 }, // sustain 50
+    { duration: "20s", target: 200 }, // ramp up to 200 users
+    { duration: "1m", target: 200 }, // sustain 200
+    { duration: "20s", target: 500 }, // ramp up to 500 users
+    { duration: "2m", target: 500 }, // sustain 500 (heavy load)
+    { duration: "30s", target: 0 }, // ramp down
   ],
 };
 
-function randomBoard(minSize = 2, maxSize = 10, minVal = -10, maxVal = 10) {
+function randomBoard(minSize = 5, maxSize = 20, minVal = -10, maxVal = 10) {
   const rows = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize;
   const cols = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize;
 
@@ -76,6 +78,16 @@ export default function () {
   );
 
   check(gameRes, { "game played": (r) => r.status === 200 });
+
+  // Retrieve data
+  let playerGet = http.get(`http://app:8080/api/players/${playerId}`);
+  check(playerGet, { "player fetched": (r) => r.status === 200 });
+
+  let boardGet = http.get(`http://app:8080/api/boards/${boardId}`);
+  check(boardGet, { "board fetched": (r) => r.status === 200 });
+
+  let gameGet = http.get(`http://app:8080/api/games/${gameId}`);
+  check(gameGet, { "game fetched": (r) => r.status === 200 });
 
   // Fetch all games (simulate dashboard load)
   let gamesRes = http.get("http://app:8080/api/games");
