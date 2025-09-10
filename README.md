@@ -1,5 +1,8 @@
 # Dungeon Game API
 
+## Architecture
+![Architecture Diagram](./diagrams/Architecture.drawio.png)
+
 ## Prerequisites
 
 1. PostgreSQL database running on localhost:5432
@@ -224,6 +227,10 @@ docker system prune -af --volumes
 ```
 
 ## Results
+
+* http_req_duration => the end-to-end time of all requests (that is, the total latency)
+* http_req_failed => the total number of failed requests
+* iterations => the total number of iterations
 
 <img src="./screenshots/stress-tests-terminal-results.png" />
 

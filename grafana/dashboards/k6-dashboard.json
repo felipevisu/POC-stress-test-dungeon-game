@@ -401,45 +401,6 @@
             ]
           ],
           "tags": []
-        },
-        {
-          "alias": "total",
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "hide": false,
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT sum(\"value\") FROM \"http_reqs\" WHERE $timeFilter GROUP BY time(${interval_value}s) fill(null)",
-          "rawQuery": true,
-          "refId": "B",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
         }
       ],
       "thresholds": [
@@ -470,7 +431,7 @@
       "tooltip": {
         "show": true
       },
-      "type": "blackmirror1-singlestat-math-panel",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMappingColorBackground": "#767171",
       "valueMaps": [
