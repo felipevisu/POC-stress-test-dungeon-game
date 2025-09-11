@@ -228,3 +228,4 @@ docker system prune -af --volumes
 <img src="./screenshots/stress-tests-terminal-results.png" />
 
 <img src="./screenshots/grafana-dashboard.png" />
+
